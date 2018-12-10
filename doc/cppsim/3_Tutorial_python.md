@@ -214,6 +214,7 @@ del dense_gate
 - Measurement : Measurement
 - Noise : BitFlipNoise, DephasingNoise, IndepenedentXZNoise, DepolarizingNoise
 
+*注意* 回転ゲートはすべて\f$e^{i\theta G}\f$ の形です。
 
 ### 量子ゲートの合成
 続けて作用する量子ゲートを合成し、新たな単一の量子ゲートを生成できます。これにより量子状態へのアクセスを減らせます。

@@ -196,6 +196,7 @@ int main() {
 - Measurement : Measurement
 - Noise : BitFlipNoise, DephasingNoise, IndepenedentXZNoise, DepolarizingNoise
 
+*注意* 回転ゲートはすべて\f$e^{i\theta G}\f$ の形です。
 
 ### 量子ゲートの合成
 量子ゲートを合成し、新たな量子ゲートを生成できます。
