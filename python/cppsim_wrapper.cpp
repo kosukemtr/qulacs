@@ -134,6 +134,7 @@ PYBIND11_MODULE(qulacs, m) {
         return vec;
         })
         .def("__repr__", [](const QuantumState &p) {return p.to_string();});
+        .def("get_qubit_count", [](const QuantumState& state) -> unsigned int {return (unsigned int) state.qubit_count; })
         ;
 
 #ifdef _USE_GPU
