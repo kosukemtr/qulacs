@@ -230,7 +230,7 @@ public:
     }
 
     virtual UINT get_qubit_count() const {
-        return this->qubit_count
+        return this->qubit_count;
     }
     
     /**
