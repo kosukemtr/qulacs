@@ -133,8 +133,8 @@ PYBIND11_MODULE(qulacs, m) {
         Eigen::VectorXcd vec = Eigen::Map<Eigen::VectorXcd>(state.data_cpp(), state.dim);
         return vec;
         })
-        .def("__repr__", [](const QuantumState &p) {return p.to_string();});
         .def("get_qubit_count", [](const QuantumState& state) -> unsigned int {return (unsigned int) state.qubit_count; })
+        .def("__repr__", [](const QuantumState &p) {return p.to_string();});
         ;
 
 #ifdef _USE_GPU

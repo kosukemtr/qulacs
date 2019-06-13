@@ -228,6 +228,10 @@ public:
         os << " * State vector : \n" << eigen_state << std::endl;
         return os.str();
     }
+
+    virtual UINT get_qubit_count() const {
+        return this->qubit_count
+    }
     
     /**
      * \~japanese-en 量子状態のデバッグ情報を出力する。
