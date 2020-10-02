@@ -31,6 +31,22 @@ public:
 
     /**
      * \~japanese-en
+     * move コンストラクタ
+     */
+    GeneralQuantumOperator(GeneralQuantumOperator && op) noexcept;
+
+    /**
+     * \~japanese-en
+     * used in move constructor
+    */
+    virtual void set_nullptr() {
+        for (auto &pauli_ptr : _operator_list) {
+            pauli_ptr = nullptr;
+        }
+    }
+
+    /**
+     * \~japanese-en
      * デストラクタ。このとき、GeneralQuantumOperatorが保持しているPauliOperatorは解放される。
      */
     virtual ~GeneralQuantumOperator();

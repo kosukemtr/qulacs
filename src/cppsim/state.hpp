@@ -309,6 +309,25 @@ public:
         initialize_quantum_state(this->data_c(), _dim);
     }
     /**
+     * \~japanese-en move コンストラクタ
+     * 
+     * @param state 
+     */
+    QuantumStateCpu(QuantumStateCpu && state) noexcept : QuantumStateBase(state.qubit_count, true) {
+        this->_state_vector = state.data_cpp();
+        state.set_nullptr();
+    }
+    
+    /**
+     * \~japanese-en 
+     * used in move constructor
+     * sets the pointer to null
+     */
+    virtual void set_nullptr() {
+        this->_state_vector = nullptr;
+    }
+
+    /**
      * \~japanese-en デストラクタ
      */
     virtual ~QuantumStateCpu(){

@@ -36,7 +36,9 @@ __host__ void release_cuda_stream_host(void* cuda_stream, unsigned int max_cuda_
     int current_device = get_current_device();
 	if(device_number!=current_device) cudaSetDevice(device_number);
 	cudaStream_t* stream = reinterpret_cast<cudaStream_t*>(cuda_stream);
-	for (unsigned int i = 0; i < max_cuda_stream; ++i) cudaStreamDestroy(stream[i]);
+	if (stream != nullptr) { // check if it's not null. (added to support pickling and move constructor of QuantumStateGpu)
+		for (unsigned int i = 0; i < max_cuda_stream; ++i) cudaStreamDestroy(stream[i]);
+	}
 	free(stream);
 }
 

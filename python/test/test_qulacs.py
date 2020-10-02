@@ -380,6 +380,128 @@ class TestPointerHandling(unittest.TestCase):
         pqc.remove_gate(3)  # [1, 0, 3, *, 2]
         check(pqc, [1, 0, 4, 2])
 
+class TestPickle(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_PauliOperator(self):
+        import pickle
+        from qulacs import PauliOperator
+        import os
+        pauli_string = "X 1 Y 2 Z 3 X 4"
+        coef = 1.2
+        filename = "test_pauli_pickle.pickle"
+        index_list = [1, 2, 3, 4]
+        pauli_id_list = [1, 2, 3, 1]
+        p = PauliOperator(pauli_string, coef)
+        with open(filename, "wb") as f:
+            pickle.dump(p, f)
+        with open(filename, "rb") as f:
+            p = pickle.load(f)
+        self.assertEqual(index_list, p.get_index_list())
+        self.assertEqual(pauli_id_list, p.get_pauli_id_list())
+        os.remove(filename)
+
+    def test_GeneralQuantumOperator(self):
+        import pickle
+        from qulacs import GeneralQuantumOperator
+        import os
+        pauli_string_list = ["X 1 Y 2 Z 3 X 4", "X 0 Y 1 Z 2 X 3"]
+        coef_list = [1.2, 1.3]
+        filename = "test_general_operator_pickle.pickle"
+        n_qubits = 5
+        index_list = [[1, 2, 3, 4], [0, 1, 2, 3]]
+        pauli_id_list = [[1, 2, 3, 1], [1, 2, 3, 1]]
+        op = GeneralQuantumOperator(n_qubits)
+        for coef, pauli_string in zip(coef_list, pauli_string_list):
+            op.add_operator(coef, pauli_string)
+        with open(filename, "wb") as f:
+            pickle.dump(op, f)
+        with open(filename, "rb") as f:
+            op = pickle.load(f)
+        for i in range(len(pauli_string_list)):
+            self.assertEqual(index_list[i], op.get_term(i).get_index_list())
+            self.assertEqual(pauli_id_list[i], op.get_term(i).get_pauli_id_list())
+            self.assertAlmostEqual(coef_list[i], op.get_term(i).get_coef())
+        os.remove(filename)
+    
+    def test_HermitianQuantumOperator(self):
+        import pickle
+        from qulacs import Observable
+        import os
+        pauli_string_list = ["X 1 Y 2 Z 3 X 4", "X 0 Y 1 Z 2 X 3"]
+        coef_list = [1.2, 1.3]
+        filename = "test_general_operator_pickle.pickle"
+        n_qubits = 5
+        index_list = [[1, 2, 3, 4], [0, 1, 2, 3]]
+        pauli_id_list = [[1, 2, 3, 1], [1, 2, 3, 1]]
+        op = Observable(n_qubits)
+        for coef, pauli_string in zip(coef_list, pauli_string_list):
+            op.add_operator(coef, pauli_string)
+        with open(filename, "wb") as f:
+            pickle.dump(op, f)
+        with open(filename, "rb") as f:
+            op = pickle.load(f)
+        for i in range(len(pauli_string_list)):
+            self.assertEqual(index_list[i], op.get_term(i).get_index_list())
+            self.assertEqual(pauli_id_list[i], op.get_term(i).get_pauli_id_list())
+            self.assertAlmostEqual(coef_list[i], op.get_term(i).get_coef())
+        os.remove(filename)
+    
+    def test_QuantumState(self):
+        import pickle
+        from qulacs import QuantumState
+        import os
+        filename = "test_quantum_state_pickle.pickle"
+        n_qubits = 4
+        state = QuantumState(n_qubits)
+        state.set_Haar_random_state()
+        with open(filename, "wb") as f:
+            pickle.dump(state, f)
+        with open(filename, "rb") as f:
+            state2 = pickle.load(f)
+        vector1 = state.get_vector()
+        vector2 = state2.get_vector()
+        for v, w in zip(vector1, vector2):
+            self.assertAlmostEqual(v, w)
+        os.remove(filename)
+    
+    def test_DensityMatrix(self):
+        import pickle
+        from qulacs import DensityMatrix
+        import os
+        filename = "test_quantum_state_pickle.pickle"
+        n_qubits = 2
+        state = DensityMatrix(n_qubits)
+        state.set_Haar_random_state()
+        with open(filename, "wb") as f:
+            pickle.dump(state, f)
+        with open(filename, "rb") as f:
+            state2 = pickle.load(f)
+        self.assertEqual(state.__repr__(), state2.__repr__())
+        os.remove(filename)
+    
+    def test_QuantumStateGpu(self):
+        import pickle
+        try:
+            from qulacs import QuantumStateGpu
+        except ImportError:
+            return
+        import os
+        filename = "test_quantum_state_pickle.pickle"
+        n_qubits = 2
+        state = QuantumStateGpu(n_qubits)
+        state.set_Haar_random_state()
+        with open(filename, "wb") as f:
+            pickle.dump(state, f)
+        with open(filename, "rb") as f:
+            state2 = pickle.load(f)
+        self.assertEqual(state.__repr__(), state2.__repr__())
+        os.remove(filename)
+    
 
 if __name__ == "__main__":
     unittest.main()

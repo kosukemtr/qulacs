@@ -55,7 +55,20 @@ PYBIND11_MODULE(qulacs, m) {
         .def("get_expectation_value", &PauliOperator::get_expectation_value, "Get expectation value", py::arg("state"))
         .def("get_transition_amplitude", &PauliOperator::get_transition_amplitude, "Get transition amplitude", py::arg("state_bra"), py::arg("state_ket"))
         .def("copy", &PauliOperator::copy, pybind11::return_value_policy::take_ownership, "Create copied instance of Pauli operator class")
-        ;
+        .def(py::pickle(
+        [](const PauliOperator &p) { // __getstate__
+            /* Return a tuple that fully encodes the state of the object */
+            return py::make_tuple(p.get_index_list(), p.get_pauli_id_list(), p.get_coef());
+        },
+        [](py::tuple t) { // __setstate__
+            if (t.size() != 3)
+                throw std::runtime_error("Invalid state encounterd when creating PauliOperator!");
+
+            /* Create a new C++ instance */
+            PauliOperator p(t[0].cast<std::vector<UINT>>(), t[1].cast<std::vector<UINT>>(), t[2].cast<CPPCTYPE>());
+            return p;
+        }
+        ));
 
     py::class_<GeneralQuantumOperator>(m, "GeneralQuantumOperator")
         .def(py::init<unsigned int>(), "Constructor", py::arg("qubit_count"))
@@ -73,7 +86,31 @@ PYBIND11_MODULE(qulacs, m) {
         .def("get_expectation_value", &GeneralQuantumOperator::get_expectation_value, "Get expectation value", py::arg("state"))
         .def("get_transition_amplitude", &GeneralQuantumOperator::get_transition_amplitude, "Get transition amplitude", py::arg("state_bra"), py::arg("state_ket"))
         //.def_static("get_split_GeneralQuantumOperator", &(GeneralQuantumOperator::get_split_observable));
-        ;
+        .def(py::pickle(
+        [](const GeneralQuantumOperator &op) { // __getstate__
+            /* Return a tuple that fully encodes the state of the object */
+            std::vector<std::string> pauli_string_list;
+            std::vector<CPPCTYPE> coef_list;
+            for (UINT index=0; index < op.get_term_count(); index++) {
+                pauli_string_list.push_back(op.get_term(index)->get_pauli_string());
+                coef_list.push_back(op.get_term(index)->get_coef());
+            }
+            return py::make_tuple(pauli_string_list, coef_list, op.get_qubit_count());
+        },
+        [](py::tuple t) { // __setstate__
+            if (t.size() != 3)
+                throw std::runtime_error("Invalid state encounterd when creating GeneralQuantumOperator!");
+            /* Create a new C++ instance */
+            auto pauli_string_list = t[0].cast<std::vector<std::string>>();
+            auto coef_list = t[1].cast<std::vector<CPPCTYPE>>();
+            auto n_qubits = t[2].cast<UINT>();
+            GeneralQuantumOperator op(n_qubits);
+            for (int i=0; i<pauli_string_list.size(); i++) {
+                op.add_operator(coef_list[i], pauli_string_list[i]);
+            }
+            return op;
+        }
+        ));
     auto mquantum_operator = m.def_submodule("quantum_operator");
     mquantum_operator.def("create_quantum_operator_from_openfermion_file", &quantum_operator::create_general_quantum_operator_from_openfermion_file, pybind11::return_value_policy::take_ownership);
     mquantum_operator.def("create_quantum_operator_from_openfermion_text", &quantum_operator::create_general_quantum_operator_from_openfermion_text, pybind11::return_value_policy::take_ownership);
@@ -97,7 +134,31 @@ PYBIND11_MODULE(qulacs, m) {
                                           return res;}, "Get expectation value", py::arg("state"))
         .def("get_transition_amplitude", &HermitianQuantumOperator::get_transition_amplitude, "Get transition amplitude", py::arg("state_bra"), py::arg("state_ket"))
         //.def_static("get_split_Observable", &(HermitianQuantumOperator::get_split_observable));
-        ;
+        .def(py::pickle(
+        [](const HermitianQuantumOperator &op) { // __getstate__
+            /* Return a tuple that fully encodes the state of the object */
+            std::vector<std::string> pauli_string_list;
+            std::vector<CPPCTYPE> coef_list;
+            for (UINT index=0; index < op.get_term_count(); index++) {
+                pauli_string_list.push_back(op.get_term(index)->get_pauli_string());
+                coef_list.push_back(op.get_term(index)->get_coef());
+            }
+            return py::make_tuple(pauli_string_list, coef_list, op.get_qubit_count());
+        },
+        [](py::tuple t) { // __setstate__
+            if (t.size() != 3)
+                throw std::runtime_error("Invalid state encounterd when creating GeneralQuantumOperator!");
+            /* Create a new C++ instance */
+            auto pauli_string_list = t[0].cast<std::vector<std::string>>();
+            auto coef_list = t[1].cast<std::vector<CPPCTYPE>>();
+            auto n_qubits = t[2].cast<UINT>();
+            HermitianQuantumOperator op(n_qubits);
+            for (int i=0; i<pauli_string_list.size(); i++) {
+                op.add_operator(coef_list[i], pauli_string_list[i]);
+            }
+            return op;
+        }
+        ));
     auto mobservable = m.def_submodule("observable");
     mobservable.def("create_observable_from_openfermion_file", &observable::create_observable_from_openfermion_file, pybind11::return_value_policy::take_ownership);
     mobservable.def("create_observable_from_openfermion_text", &observable::create_observable_from_openfermion_text, pybind11::return_value_policy::take_ownership);
@@ -138,8 +199,25 @@ PYBIND11_MODULE(qulacs, m) {
         return vec;
         }, "Get state vector")
         .def("get_qubit_count", [](const QuantumState& state) -> unsigned int {return (unsigned int) state.qubit_count; }, "Get qubit count")
-        .def("__repr__", [](const QuantumState &p) {return p.to_string();});
-        ;
+        .def("__repr__", [](const QuantumState &p) {return p.to_string();})
+        .def(py::pickle(
+        [](const QuantumState &state) { // __getstate__
+            /* Return a tuple that fully encodes the state of the object */
+            auto data_cpp = state.data_cpp();
+            std::vector<CPPCTYPE> vector(data_cpp, data_cpp+state.dim);
+            return py::make_tuple(state.qubit_count, vector);
+        },
+        [](py::tuple t) { // __setstate__
+            if (t.size() != 2)
+                throw std::runtime_error("Invalid state encounterd when creating PauliOperator!");
+            /* Create a new C++ instance */
+            QuantumState state(t[0].cast<UINT>());
+            auto vector = t[1].cast<std::vector<CPPCTYPE>>();
+            CPPCTYPE* array = &vector[0];
+            state.load(array);
+            return state;
+        }
+        ));
 
 		m.def("StateVector", [](const unsigned int qubit_count) {
 			auto ptr = new QuantumState(qubit_count);
@@ -183,8 +261,25 @@ PYBIND11_MODULE(qulacs, m) {
 			}
 			return mat;
 		}, "Get density matrix")
-		.def("__repr__", [](const DensityMatrix &p) {return p.to_string(); });
-		;
+		.def("__repr__", [](const DensityMatrix &p) {return p.to_string(); })
+        .def(py::pickle(
+        [](const DensityMatrix &state) { // __getstate__
+            /* Return a tuple that fully encodes the state of the object */
+            auto data_cpp = state.data_cpp();
+            std::vector<CPPCTYPE> vector(data_cpp, data_cpp+state.dim*state.dim);
+            return py::make_tuple(state.qubit_count, vector);
+        },
+        [](py::tuple t) { // __setstate__
+            if (t.size() != 2)
+                throw std::runtime_error("Invalid state encounterd when creating PauliOperator!");
+            /* Create a new C++ instance */
+            DensityMatrix state(t[0].cast<UINT>());
+            auto vector = t[1].cast<std::vector<CPPCTYPE>>();
+            CPPCTYPE* array = &vector[0];
+            state.load(array);
+            return state;
+        }
+        ));
 
 #ifdef _USE_GPU
     py::class_<QuantumStateGpu, QuantumStateBase>(m, "QuantumStateGpu")
@@ -220,7 +315,24 @@ PYBIND11_MODULE(qulacs, m) {
             return vec;
         }, pybind11::return_value_policy::take_ownership, "Get state vector")
         .def("get_qubit_count", [](const QuantumStateGpu& state) -> unsigned int {return (unsigned int) state.qubit_count; }, "Get qubit count")
-        .def("__repr__", [](const QuantumStateGpu &p) {return p.to_string(); });
+        .def("__repr__", [](const QuantumStateGpu &p) {return p.to_string(); })
+        .def(py::pickle(
+        [](const QuantumStateGpu &state) { // __getstate__
+            /* Return a tuple that fully encodes the state of the object */
+            auto data_cpp = state.duplicate_data_cpp();
+            std::vector<CPPCTYPE> vector(data_cpp, data_cpp+state.dim);
+            return py::make_tuple(state.qubit_count, state.device_number, vector);
+        },
+        [](py::tuple t) { // __setstate__
+            if (t.size() != 3)
+                throw std::runtime_error("Invalid state encounterd when creating PauliOperator!");
+            /* Create a new C++ instance */
+            QuantumStateGpu state(t[0].cast<UINT>(), t[1].cast<UINT>());
+            auto vector = t[2].cast<std::vector<CPPCTYPE>>();
+            state.load(vector);
+            return state;
+        }
+        ));
         ;
 		m.def("StateVectorGpu", [](const unsigned int qubit_count) {
 			auto ptr = new QuantumStateGpu(qubit_count);
@@ -497,7 +609,25 @@ PYBIND11_MODULE(qulacs, m) {
         .def("add_diagonal_observable_rotation_gate", &QuantumCircuit::add_diagonal_observable_rotation_gate, "Add diagonal observable rotation gate", py::arg("observable"), py::arg("angle"))
         .def("add_observable_rotation_gate", &QuantumCircuit::add_observable_rotation_gate, "Add observable rotation gate", py::arg("observable"), py::arg("angle"), py::arg("repeat"))
 			
-		.def("__repr__", [](const QuantumCircuit &p) {return p.to_string(); });
+		.def("__repr__", [](const QuantumCircuit &p) {return p.to_string(); })
+        // .def(py::pickle(
+        // [](const QuantumCircuit &state) { // __getstate__
+        //     /* Return a tuple that fully encodes the state of the object */
+        //     auto data_cpp = state.data_cpp();
+        //     std::vector<CPPCTYPE> vector(data_cpp, data_cpp+state.dim*state.dim);
+        //     return py::make_tuple(state.qubit_count, vector);
+        // },
+        // [](py::tuple t) { // __setstate__
+        //     if (t.size() != 2)
+        //         throw std::runtime_error("Invalid state encounterd when creating PauliOperator!");
+        //     /* Create a new C++ instance */
+        //     DensityMatrix state(t[0].cast<UINT>());
+        //     auto vector = t[1].cast<std::vector<CPPCTYPE>>();
+        //     CPPCTYPE* array = &vector[0];
+        //     state.load(array);
+        //     return state;
+        // }
+        // ));
     ;
 
     py::class_<ParametricQuantumCircuit, QuantumCircuit>(m, "ParametricQuantumCircuit")

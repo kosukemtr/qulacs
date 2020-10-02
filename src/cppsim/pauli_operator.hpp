@@ -98,6 +98,29 @@ public:
 
     /**
      * \~japanese-en
+     * 自身が保持するパウリ演算子に対応する文字列を返す
+     *
+     * @return パウリ演算子に対応する文字列。
+     */
+    std::string get_pauli_string() const {
+        std::string res = "";
+        UINT size = _pauli_list.size();
+        UINT target_index, pauli_id;
+        for (UINT index=0; index<size; index++) {
+            target_index = _pauli_list[index].index();
+            pauli_id = _pauli_list[index].pauli_id();
+            if (pauli_id == 0) continue;
+            else if (pauli_id == 1) res += "X";
+            else if (pauli_id == 2) res += "Y";
+            else if (pauli_id == 3) res += "Z";
+            res += " "+ std::to_string(target_index)+" ";
+        }
+        res.pop_back();
+        return res;
+    }
+
+    /**
+     * \~japanese-en
      * コンストラクタ
      *
      * 係数をとって空のインスタンスを返す。

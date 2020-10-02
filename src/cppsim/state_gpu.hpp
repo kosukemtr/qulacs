@@ -36,6 +36,22 @@ public:
 	}
 
 	/**
+	 * \~japanese-en move コンストラクタ
+	 *
+	 * @param qubit_count_ 量子ビット数
+	 */
+	QuantumStateGpu(QuantumStateGpu && state) noexcept : QuantumStateBase(state.qubit_count, true, state.device_number) {
+		this->_cuda_stream = state.get_cuda_stream();
+		this->_state_vector = state.data();
+		state.set_nullptr();
+	}
+
+	virtual void set_nullptr() {
+		this->_cuda_stream = nullptr;
+		this->_state_vector = nullptr;
+	}
+
+	/**
 	 * \~japanese-en デストラクタ
 	 */
 	virtual ~QuantumStateGpu() {

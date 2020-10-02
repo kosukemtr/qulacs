@@ -20,6 +20,16 @@ GeneralQuantumOperator::GeneralQuantumOperator(UINT qubit_count){
     _is_hermitian = true;
 }
 
+GeneralQuantumOperator::GeneralQuantumOperator(GeneralQuantumOperator &&op) noexcept : 
+_operator_list(op.get_terms()), _qubit_count(op.get_qubit_count())
+{
+    // std::cout << "move constructor called" << std::endl;
+    // to avoid possible double free, set all pointer null.
+    op.set_nullptr();
+}
+
+
+
 GeneralQuantumOperator::~GeneralQuantumOperator(){
     for(auto& term : this->_operator_list){
         delete term;

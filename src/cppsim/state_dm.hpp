@@ -30,6 +30,26 @@ public:
         dm_initialize_quantum_state(this->data_c(), _dim);
     }
     /**
+     * \~japanese-en move コンストラクタ
+     * 
+     * @param state
+     */
+    DensityMatrixCpu(DensityMatrixCpu && state) noexcept : QuantumStateBase(state.qubit_count, false){
+        this->_density_matrix = state.data_cpp();
+        state.set_nullptr();
+    }
+
+    /**
+     * \~japanese-en 
+     * used in move constructor
+     * sets the pointer to null
+     */
+    virtual void set_nullptr() {
+        this->_density_matrix = nullptr;
+    }
+
+
+    /**
      * \~japanese-en デストラクタ
      */
     virtual ~DensityMatrixCpu(){
